@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AeroNet Login</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a2a6c;
+            background: linear-gradient(to right, #b21f1f, #fdbb2d, #1a2a6c);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 15px 25px rgba(0,0,0,0.5);
+            width: 350px;
+            text-align: center;
+        }
+        h2 { color: #333; margin-bottom: 25px; }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #1a2a6c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+        button:hover { background-color: #b21f1f; }
+        #message { color: red; margin-top: 15px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    <h2>✈️ AeroNet Login</h2>
+    <input type="text" id="email" placeholder="Email (π.χ. giannis@aeronet.gr)">
+    <input type="password" id="empid" placeholder="Employee ID (π.χ. EMP_001)">
+    <button onclick="handleLogin()">Είσοδος</button>
+    <div id="message"></div>
+</div>
+
+<script>
+    async function handleLogin() {
+        const email = document.getElementById('email').value;
+        const empid = document.getElementById('empid').value;
+        const messageDiv = document.getElementById('message');
+
+        try {
+            const response = await fetch('https://aeronet-backend.onrender.com/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, empid })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Αποθηκεύουμε τον χρήστη τοπικά για να ξέρουμε ότι είναι συνδεδεμένος
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('userName', data.user.fullname);
+                localStorage.setItem('userRole', data.user.role);
+                
+                // Ανακατεύθυνση στο Dashboard
+                window.location.href = 'index.html';
+            } else {
+                messageDiv.innerText = "❌ Λάθος στοιχεία! Δοκιμάστε ξανά.";
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            messageDiv.innerText = "⚠️ Σφάλμα σύνδεσης με τον server.";
+        }
+    }
+</script>
+
+</body>
+</html>
