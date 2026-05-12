@@ -57,10 +57,37 @@ app.get('/api/employees', async (req, res) => {
   }
 });
 
+app.get('/api/suppliers', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM suppliers');
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/orders', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM orders');
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/qc-reports', async (req, res) => {
   try {
     const reports = await mongoose.connection.db.collection('qc_reports').find({}).toArray();
     res.json(reports);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/iot-logs', async (req, res) => {
+  try {
+    const logs = await mongoose.connection.db.collection('iot_logs').find({}).toArray();
+    res.json(logs);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
