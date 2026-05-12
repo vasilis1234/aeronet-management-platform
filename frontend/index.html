@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <title>AeroNet Management Dashboard</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f9; }
+        h1 { color: #2c3e50; }
+        .container { display: flex; gap: 20px; flex-wrap: wrap; }
+        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); flex: 1; min-width: 300px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #3498db; color: white; }
+    </style>
+</head>
+<body>
+
+    <h1>✈️ AeroNet Management Platform</h1>
+    
+    <div class="container">
+        <div class="card">
+            <h2>Προσωπικό (PostgreSQL)</h2>
+            <table id="employeeTable">
+                <thead>
+                    <tr>
+                        <th>Όνομα</th>
+                        <th>Θέση</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>QC Reports (MongoDB)</h2>
+            <table id="qcTable">
+                <thead>
+                    <tr>
+                        <th>Report ID</th>
+                        <th>Inspector</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://aeronet-backend.onrender.com/api";
+
+        // Fetch Employees (PostgreSQL)
+        fetch(`${API_URL}/employees`)
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.querySelector("#employeeTable tbody");
+                data.forEach(emp => {
+                    tbody.innerHTML += `<tr><td>${emp.fullname}</td><td>${emp.jobtitle}</td></tr>`;
+                });
+            })
+            .catch(err => console.error("Error loading employees:", err));
+
+        // Fetch QC Reports (MongoDB)
+        fetch(`${API_URL}/qc-reports`)
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.querySelector("#qcTable tbody");
+                data.forEach(report => {
+                    tbody.innerHTML += `<tr><td>${report.reportID}</td><td>${report.inspector}</td><td>${report.status}</td></tr>`;
+                });
+            })
+            .catch(err => console.error("Error loading QC reports:", err));
+    </script>
+</body>
+</html>
