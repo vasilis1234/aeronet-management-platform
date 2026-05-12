@@ -1,0 +1,23 @@
+
+CREATE TABLE ROLES (
+    RoleID VARCHAR(10) PRIMARY KEY,
+    RoleName VARCHAR(50)
+);
+
+
+CREATE TABLE EMPLOYEE (
+    EmpID VARCHAR(10) PRIMARY KEY,
+    FullName VARCHAR(100),
+    JobTitle VARCHAR(50),
+    Department VARCHAR(50),
+    Email VARCHAR(100),
+    RoleID VARCHAR(10) REFERENCES ROLES(RoleID)
+);
+
+
+CREATE TABLE SUPPLIERS (
+    SupplierID SERIAL PRIMARY KEY,
+    Name VARCHAR(100),
+    ContactEmail VARCHAR(100),
+    Category VARCHAR(50)
+);
