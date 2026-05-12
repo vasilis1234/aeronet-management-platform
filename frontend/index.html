@@ -2,92 +2,75 @@
 <html lang="el">
 <head>
     <meta charset="UTF-8">
-    <title>AeroNet Control Tower</title>
+    <title>AeroNet Dashboard</title>
     <style>
         body { font-family: 'Courier New', monospace; background: #0b0e14; color: #ecf0f1; margin: 0; padding: 20px; }
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f39c12; padding-bottom: 10px; margin-bottom: 20px; }
-        h1 { color: #f39c12; margin: 0; font-size: 22px; }
+        h1 { color: #f39c12; margin: 0; font-size: 20px; }
         .nav-bar { margin-bottom: 20px; display: flex; gap: 10px; }
-        .nav-btn { background: #151921; border: 1px solid #f39c12; color: #f39c12; padding: 10px; cursor: pointer; text-transform: uppercase; font-size: 12px; }
+        .nav-btn { background: #151921; border: 1px solid #f39c12; color: #f39c12; padding: 10px; cursor: pointer; text-transform: uppercase; font-size: 11px; }
         .nav-btn.active { background: #f39c12; color: #0b0e14; }
         .content-section { display: none; background: #151921; border: 1px solid #2c3e50; padding: 20px; }
         .content-section.active { display: block; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th { background: #1a1f29; color: #f39c12; text-align: left; padding: 10px; border-bottom: 1px solid #2c3e50; }
         td { padding: 10px; border-bottom: 1px solid #1a1f29; font-size: 13px; }
-        .logout { color: #e74c3c; cursor: pointer; text-decoration: underline; background: none; border: none; font-family: inherit; }
+        .logout { color: #e74c3c; cursor: pointer; background: none; border: none; font-family: inherit; text-decoration: underline; }
     </style>
 </head>
 <body>
-
     <div class="header">
-        <h1>AERONET CENTRAL COMMAND</h1>
-        <div style="text-align:right; font-size: 12px;">
-            <span id="userName"></span> (<span id="userRole"></span>)<br>
-            <button class="logout" onclick="logout()">[TERMINATE_SESSION]</button>
+        <h1>AERONET COMMAND CENTER</h1>
+        <div style="text-align:right; font-size: 11px;">
+            USER: <span id="userName"></span> | ROLE: <span id="userRole"></span><br>
+            <button class="logout" onclick="logout()">LOGOUT</button>
         </div>
     </div>
-
     <div class="nav-bar">
-        <button class="nav-btn active" onclick="showSection('personnel')">Personnel</button>
-        <button class="nav-btn" onclick="showSection('supply')">Supply Chain</button>
-        <button class="nav-btn" onclick="showSection('quality')">Quality Control</button>
+        <button class="nav-btn active" onclick="showSection('personnel', event)">Personnel</button>
+        <button class="nav-btn" onclick="showSection('supply', event)">Supply Chain</button>
+        <button class="nav-btn" onclick="showSection('quality', event)">Quality & IoT</button>
     </div>
-
     <div id="personnel" class="content-section active">
-        <h2>POSTGRESQL: EMPLOYEES</h2>
+        <h2>STAFF LIST (POSTGRESQL)</h2>
         <table id="empTable">
             <thead><tr><th>NAME</th><th>POSITION</th><th>EMAIL</th></tr></thead>
             <tbody></tbody>
         </table>
     </div>
-
     <div id="supply" class="content-section">
-        <h2>POSTGRESQL: SUPPLIERS & ORDERS</h2>
+        <h2>LOGISTICS DATA (POSTGRESQL)</h2>
         <table id="supplyTable">
             <thead><tr><th>SUPPLIER</th><th>STATUS</th></tr></thead>
             <tbody></tbody>
         </table>
     </div>
-
     <div id="quality" class="content-section">
-        <h2>MONGODB: QC & IOT</h2>
+        <h2>QC & SENSOR DATA (MONGODB)</h2>
         <table id="qcTable">
             <thead><tr><th>REPORT_ID</th><th>INSPECTOR</th><th>STATUS</th></tr></thead>
             <tbody></tbody>
         </table>
     </div>
-
     <script>
         if (localStorage.getItem('isLoggedIn') !== 'true') { window.location.href = 'login.html'; }
         document.getElementById('userName').innerText = localStorage.getItem('userName');
         document.getElementById('userRole').innerText = localStorage.getItem('userRole');
-
-        function showSection(id) {
+        function showSection(id, e) {
             document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(id).classList.add('active');
-            event.target.classList.add('active');
+            e.target.classList.add('active');
         }
-
-        // Fetch Employees
         fetch('/api/employees').then(r => r.json()).then(data => {
-            document.querySelector("#empTable tbody").innerHTML = data.map(e => 
-                `<tr><td>${e.fullname}</td><td>${e.jobtitle}</td><td>${e.email}</td></tr>`).join('');
+            document.querySelector("#empTable tbody").innerHTML = data.map(e => `<tr><td>${e.fullname}</td><td>${e.jobtitle}</td><td>${e.email}</td></tr>`).join('');
         });
-
-        // Fetch Suppliers
         fetch('/api/suppliers').then(r => r.json()).then(data => {
-            document.querySelector("#supplyTable tbody").innerHTML = data.map(s => 
-                `<tr><td>${s.suppliername}</td><td>ACTIVE</td></tr>`).join('');
+            document.querySelector("#supplyTable tbody").innerHTML = data.map(s => `<tr><td>${s.suppliername || s.name}</td><td>ACTIVE</td></tr>`).join('');
         });
-
-        // Fetch QC Reports
         fetch('/api/qc-reports').then(r => r.json()).then(data => {
-            document.querySelector("#qcTable tbody").innerHTML = data.map(r => 
-                `<tr><td>${r.reportID}</td><td>${r.inspector}</td><td>${r.status}</td></tr>`).join('');
+            document.querySelector("#qcTable tbody").innerHTML = data.map(r => `<tr><td>${r.reportID}</td><td>${r.inspector}</td><td>${r.status}</td></tr>`).join('');
         });
-
         function logout() { localStorage.clear(); window.location.href = 'login.html'; }
     </script>
 </body>
