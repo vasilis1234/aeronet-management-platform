@@ -66,6 +66,15 @@ app.get('/api/suppliers', async (req, res) => {
   }
 });
 
+app.get('/api/orders', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM orders');
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/qc-reports', async (req, res) => {
   try {
     const reports = await mongoose.connection.db.collection('qc_reports').find({}).toArray();
