@@ -2,94 +2,74 @@
 <html lang="el">
 <head>
     <meta charset="UTF-8">
-    <title>AeroNet Control Tower</title>
+    <title>AeroNet Dashboard</title>
     <style>
-        body { font-family: 'Courier New', monospace; background: #0b0e14; color: #ecf0f1; margin: 0; padding: 20px; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f39c12; padding-bottom: 10px; margin-bottom: 20px; }
-        h1 { color: #f39c12; margin: 0; font-size: 20px; letter-spacing: 2px; }
-        .nav-bar { margin-bottom: 20px; display: flex; gap: 10px; }
-        .nav-btn { background: #151921; border: 1px solid #f39c12; color: #f39c12; padding: 10px 15px; cursor: pointer; text-transform: uppercase; font-size: 11px; font-weight: bold; }
-        .nav-btn.active { background: #f39c12; color: #0b0e14; }
-        .content-section { display: none; background: #151921; border: 1px solid #2c3e50; padding: 20px; min-height: 300px; }
-        .content-section.active { display: block; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th { background: #1a1f29; color: #f39c12; text-align: left; padding: 12px; border-bottom: 2px solid #2c3e50; }
-        td { padding: 12px; border-bottom: 1px solid #1a1f29; font-size: 13px; }
-        tr:hover { background: #1c222d; }
-        .logout { color: #e74c3c; cursor: pointer; background: none; border: none; font-family: inherit; text-decoration: underline; font-size: 11px; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 30px; background-color: #f0f2f5; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; background: #003366; color: white; padding: 10px 20px; border-radius: 10px; margin-bottom: 20px; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #004080; color: white; }
+        button.logout { background: #b21f1f; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>AERONET COMMAND CENTER</h1>
-        <div style="text-align:right;">
-            <span id="userName" style="color:#f39c12"></span> | ROLE: <span id="userRole" style="color:#f39c12"></span><br>
-            <button class="logout" onclick="logout()">[TERMINATE_SESSION]</button>
+    <div class="header-bar">
+        <h1>✈️ AeroNet Management Dashboard</h1>
+        <div>
+            <span id="welcomeMsg"></span>
+            <button class="logout" onclick="logout()">Έξοδος</button>
         </div>
     </div>
-
-    <div class="nav-bar">
-        <button class="nav-btn active" onclick="showSection('personnel', event)">Personnel</button>
-        <button class="nav-btn" onclick="showSection('supply', event)">Supply Chain</button>
-        <button class="nav-btn" onclick="showSection('quality', event)">Quality & IoT</button>
-    </div>
-
-    <div id="personnel" class="content-section active">
-        <h2>STAFF DATABASE (PostgreSQL)</h2>
-        <table id="empTable">
-            <thead><tr><th>FULL NAME</th><th>JOB TITLE</th><th>EMAIL</th></tr></thead>
+    
+    <div class="card">
+        <h2>👥 Προσωπικό (PostgreSQL) - Role: <span id="userRoleDisplay"></span></h2>
+        <table id="employeeTable">
+            <thead><tr><th>Όνομα</th><th>Θέση</th><th>Email</th></tr></thead>
             <tbody></tbody>
         </table>
     </div>
 
-    <div id="supply" class="content-section">
-        <h2>LOGISTICS & SUPPLIERS (PostgreSQL)</h2>
-        <table id="supplyTable">
-            <thead><tr><th>SUPPLIER NAME</th><th>CONTACT</th><th>CATEGORY</th></tr></thead>
-            <tbody></tbody>
-        </table>
-    </div>
-
-    <div id="quality" class="content-section">
-        <h2>QC REPORTS & SENSORS (MongoDB)</h2>
+    <div class="card">
+        <h2>🛠️ QC Reports (MongoDB)</h2>
         <table id="qcTable">
-            <thead><tr><th>REPORT_ID</th><th>INSPECTOR</th><th>STATUS</th></tr></thead>
+            <thead><tr><th>Report ID</th><th>Inspector</th><th>Status</th><th>Notes</th></tr></thead>
             <tbody></tbody>
         </table>
     </div>
 
     <script>
-        if (localStorage.getItem('isLoggedIn') !== 'true') { window.location.href = 'login.html'; }
-        document.getElementById('userName').innerText = localStorage.getItem('userName').toUpperCase();
-        document.getElementById('userRole').innerText = localStorage.getItem('userRole').toUpperCase();
-
-        function showSection(id, e) {
-            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            e.target.classList.add('active');
+        // --- ΕΛΕΓΧΟΣ ΠΡΟΣΒΑΣΗΣ (RBAC) ---
+        if (localStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.href = 'login.html';
         }
 
-        // Fetch Employees
-        fetch('/api/employees').then(r => r.json()).then(data => {
-            document.querySelector("#empTable tbody").innerHTML = data.map(e => 
-                `<tr><td>${e.fullname}</td><td>${e.jobtitle}</td><td>${e.email}</td></tr>`).join('');
-        });
+        document.getElementById('welcomeMsg').innerText = "Χρήστης: " + localStorage.getItem('userName');
+        document.getElementById('userRoleDisplay').innerText = localStorage.getItem('userRole');
 
-        // Fetch Suppliers
-        fetch('/api/suppliers').then(r => r.json()).then(data => {
-            document.querySelector("#supplyTable tbody").innerHTML = data.map(s => 
-                `<tr><td>${s.suppliername}</td><td>${s.contact}</td><td>${s.category}</td></tr>`).join('');
-        });
+        const API = "https://aeronet-backend.onrender.com/api";
 
-        // Fetch QC Reports
-        fetch('/api/qc-reports').then(r => r.json()).then(data => {
-            document.querySelector("#qcTable tbody").innerHTML = data.map(r => 
-                `<tr><td>${r.reportID}</td><td>${r.inspector}</td><td>${r.status}</td></tr>`).join('');
-        });
+        // Φόρτωση Employees (PostgreSQL)
+        fetch(`${API}/employees`)
+            .then(r => r.json())
+            .then(data => {
+                const html = data.map(e => `<tr><td>${e.fullname}</td><td>${e.jobtitle}</td><td>${e.email}</td></tr>`).join('');
+                document.querySelector("#employeeTable tbody").innerHTML = html;
+            });
 
-        function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+        // Φόρτωση QC Reports (MongoDB)
+        fetch(`${API}/qc-reports`)
+            .then(r => r.json())
+            .then(data => {
+                const html = data.map(r => `<tr><td>${r.reportID}</td><td>${r.inspector}</td><td>${r.status}</td><td>${r.results.notes}</td></tr>`).join('');
+                document.querySelector("#qcTable tbody").innerHTML = html;
+            });
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
     </script>
 </body>
 </html>
