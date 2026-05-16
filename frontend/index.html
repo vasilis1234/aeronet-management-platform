@@ -18,9 +18,10 @@
         tr:hover { background: #1c222d; }
         .logout { color: #e74c3c; cursor: pointer; background: none; border: none; font-family: inherit; text-decoration: underline; font-size: 11px; }
         
-        /* Δυναμικές Κλάσεις για Απόκρυψη/Εμφάνιση */
+        /* Δυναμικές Κλάσεις για Απόκρυψη/Εμφάνιση βάσει Ρόλου */
         .manager-only { display: none; color: #ff9800; }
         .admin-only { display: none; }
+        .inspector-only { display: none; color: #2ecc71; }
 
         /* Admin KPI Cards Style */
         .admin-cards-container { display: none; gap: 20px; margin-bottom: 20px; }
@@ -104,7 +105,14 @@
     <div id="quality" class="content-section">
         <h2>QC REPORTS & SENSORS (MongoDB)</h2>
         <table id="qcTable">
-            <thead><tr><th>REPORT_ID</th><th>INSPECTOR</th><th>STATUS</th></tr></thead>
+            <thead>
+                <tr>
+                    <th>REPORT_ID</th>
+                    <th>INSPECTOR</th>
+                    <th>STATUS</th>
+                    <th class="inspector-only">INSPECTION LOG / REMARKS</th>
+                </tr>
+            </thead>
             <tbody></tbody>
         </table>
     </div>
@@ -136,8 +144,6 @@
                     <td class="admin-only" style="color:#e74c3c; font-weight:bold;">${e.empid === 'EMP_001' ? 'LEVEL_5_MAX_ROOT' : randomClearance}</td>
                 </tr>`;
             }).join('');
-            
-            // Τρέχουμε τα permissions αφού φορτωθούν οι υπάλληλοι
             applyRolePermissions();
         });
 
@@ -154,44 +160,55 @@
                     <td class="manager-only">${randomValue}</td>
                 </tr>`;
             }).join('');
-            
             applyRolePermissions();
         });
 
-        // Fetch QC Reports
+        // Fetch QC Reports (Εμπλουτισμένο με τις κρυφές τεχνικές σημειώσεις)
         fetch('/api/qc-reports').then(r => r.json()).then(data => {
-            document.querySelector("#qcTable tbody").innerHTML = data.map(r => 
-                `<tr><td>${r.reportID}</td><td>${r.inspector}</td><td>${r.status}</td></tr>`).join('');
+            document.querySelector("#qcTable tbody").innerHTML = data.map(r => {
+                // Τεχνικές σημειώσεις ανάλογα με το status για ρεαλιστικό εφέ
+                let technicalReason = "Routine hangar evaluation checklist completed.";
+                if (r.status === 'FAILED') { technicalReason = "CRITICAL: Micro-crack warning on turbine layer."; }
+                if (r.status === 'PENDING') { technicalReason = "Awaiting pressure sensor recalibration."; }
+
+                return `<tr>
+                    <td>${r.reportID}</td>
+                    <td>${r.inspector}</td>
+                    <td>${r.status}</td>
+                    <td class="inspector-only">${technicalReason}</td>
+                </tr>`;
+            }).join('');
+            applyRolePermissions();
         });
 
-        // Η ΣΥΝΑΡΤΗΣΗ ΠΟΥ ΕΛΕΓΧΕΙ ΤΑ ΠΑΝΤΑ ΒΑΣΕΙ ΡΟΛΟΥ
+        // Η ΚΕΝΤΡΙΚΗ ΣΥΝΑΡΤΗΣΗ ENFORCER ΓΙΑ ΟΛΟΥΣ ΤΟΥΣ ΡΟΛΟΥΣ
         function applyRolePermissions() {
             const role = currentRole.toLowerCase();
             
-            // 1. Έλεγχος για Admin & Supply Manager (Supply Chain)
+            // 1. Έλεγχος για Supply Manager & Admin (Supply Chain στήλη)
             if (role === 'supply_manager' || role === 'admin') {
                 document.querySelectorAll('.manager-only').forEach(el => el.style.display = 'table-cell');
             } else {
                 document.querySelectorAll('.manager-only').forEach(el => el.style.display = 'none');
             }
 
-            // 2. ΕΙΔΙΚΟΣ ΕΛΕΓΧΟΣ ΑΠΟΚΛΕΙΣΤΙΚΑ ΓΙΑ ADMIN
+            // 2. Έλεγχος αποκλειστικά για τον ADMIN (KPIs, Clearances, Override Box)
             if (role === 'admin') {
-                // Εμφάνιση των KPI Cards στην κορυφή
                 document.getElementById('adminKpiPanels').style.display = 'flex';
-                
-                // Εμφάνιση των admin-only στοιχείων (Στήλη Clearance & Admin Box)
                 document.querySelectorAll('.admin-only').forEach(el => {
-                    if (el.tagName === 'TH' || el.tagName === 'TD') {
-                        el.style.display = 'table-cell';
-                    } else {
-                        el.style.display = 'block';
-                    }
+                    if (el.tagName === 'TH' || el.tagName === 'TD') { el.style.display = 'table-cell'; } 
+                    else { el.style.display = 'block'; }
                 });
             } else {
-                // Αν δεν είναι admin, κρύψτα όλα
                 document.getElementById('adminKpiPanels').style.display = 'none';
                 document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+            }
+
+            // 3. ΝΕΟΣ ΕΛΕΓΧΟΣ ΑΠΟΚΛΕΙΣΤΙΚΑ ΓΙΑ ΤΟΝ INSPECTOR (Technical Remarks στη NoSQL)
+            if (role === 'inspector') {
+                document.querySelectorAll('.inspector-only').forEach(el => el.style.display = 'table-cell');
+            } else {
+                document.querySelectorAll('.inspector-only').forEach(el => el.style.display = 'none');
             }
         }
 
