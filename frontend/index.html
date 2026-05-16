@@ -17,6 +17,8 @@
         td { padding: 12px; border-bottom: 1px solid #1a1f29; font-size: 13px; }
         tr:hover { background: #1c222d; }
         .logout { color: #e74c3c; cursor: pointer; background: none; border: none; font-family: inherit; text-decoration: underline; font-size: 11px; }
+        
+        .manager-only { display: none; color: #ff9800; }
     </style>
 </head>
 <body>
@@ -46,7 +48,14 @@
     <div id="supply" class="content-section">
         <h2>LOGISTICS & SUPPLIERS (PostgreSQL)</h2>
         <table id="supplyTable">
-            <thead><tr><th>SUPPLIER NAME</th><th>CONTACT</th><th>CATEGORY</th></tr></thead>
+            <thead>
+                <tr>
+                    <th>SUPPLIER NAME</th>
+                    <th>CONTACT</th>
+                    <th>CATEGORY</th>
+                    <th class="manager-only">CONTRACT VALUE</th>
+                </tr>
+            </thead>
             <tbody></tbody>
         </table>
     </div>
@@ -61,8 +70,10 @@
 
     <script>
         if (localStorage.getItem('isLoggedIn') !== 'true') { window.location.href = 'login.html'; }
+        
+        const currentRole = localStorage.getItem('userRole') || '';
         document.getElementById('userName').innerText = localStorage.getItem('userName').toUpperCase();
-        document.getElementById('userRole').innerText = localStorage.getItem('userRole').toUpperCase();
+        document.getElementById('userRole').innerText = currentRole.toUpperCase();
 
         function showSection(id, e) {
             document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
@@ -71,23 +82,46 @@
             e.target.classList.add('active');
         }
 
-        // Fetch Employees
+      
         fetch('/api/employees').then(r => r.json()).then(data => {
             document.querySelector("#empTable tbody").innerHTML = data.map(e => 
                 `<tr><td>${e.fullname}</td><td>${e.jobtitle}</td><td>${e.email}</td></tr>`).join('');
         });
 
-        // Fetch Suppliers
+
         fetch('/api/suppliers').then(r => r.json()).then(data => {
-            document.querySelector("#supplyTable tbody").innerHTML = data.map(s => 
-                `<tr><td>${s.suppliername}</td><td>${s.contact}</td><td>${s.category}</td></tr>`).join('');
+            document.querySelector("#supplyTable tbody").innerHTML = data.map(s => {
+               
+                const dummyValues = ['€145,000', '€280,000', '€65,000', '€412,000', '€95,000'];
+                const randomValue = dummyValues[Math.floor(Math.random() * dummyValues.length)];
+                
+                return `<tr>
+                    <td>${s.suppliername}</td>
+                    <td>${s.contact}</td>
+                    <td>${s.category}</td>
+                    <td class="manager-only">${randomValue}</td>
+                </tr>`;
+            }).join('');
+            
+           
+            applyRolePermissions();
         });
 
-        // Fetch QC Reports
+     
         fetch('/api/qc-reports').then(r => r.json()).then(data => {
             document.querySelector("#qcTable tbody").innerHTML = data.map(r => 
                 `<tr><td>${r.reportID}</td><td>${r.inspector}</td><td>${r.status}</td></tr>`).join('');
         });
+
+       
+        function applyRolePermissions() {
+            const role = currentRole.toLowerCase();
+            if (role === 'supply_manager' || role === 'admin') {
+                document.querySelectorAll('.manager-only').forEach(el => el.style.display = 'table-cell');
+            } else {
+                document.querySelectorAll('.manager-only').forEach(el => el.style.display = 'none');
+            }
+        }
 
         function logout() { localStorage.clear(); window.location.href = 'login.html'; }
     </script>
